@@ -1,4 +1,5 @@
-﻿using System;
+﻿using RadarDetectionEnd;
+using System;
 using System.Collections.Generic;
 using System.Linq;
 
@@ -7,18 +8,20 @@ public class CoordToPicConverter
     private Random random = new Random();
     private int rangeFromRadar = 90;
     private int biasBright = 121;
+    private int maxDistance = 20000;
 
-    public List<int[]> Convert(List<int[]> droneCoordinates)
+    public List<Pixel> Convert(List<Drone> droneCoordinates)
     {
         int x = 0; // for the angle
         int y = 0; // for the height and is random
         int b = 0; // brightness above 121
-        List<int[]> imCoordinates = new List<int[]>();
+        Pixel pixel = new Pixel(x, y, b);
+        List<Pixel> imCoordinates = new List<Pixel>();
 
-        foreach (int[] i in droneCoordinates)
+        foreach (Drone d in droneCoordinates)
         {
-            int angle = i[0];
-            int range = i[1];
+            int angle = d.degree;
+            int range = d.distance;
 
             if (angle <= rangeFromRadar / 2 && angle >= -rangeFromRadar / 2)
             {
@@ -26,21 +29,20 @@ public class CoordToPicConverter
                 y = random.Next(0, 768);
                 b = biasBright + (255 - biasBright) * ((maxDistance - range) / maxDistance);
 
-                imCoordinates.Add(new int[] { x, y, b });
+                imCoordinates.Add(new Pixel( x, y, b ));
             }
         }
 
         return imCoordinates;
     }
 }
-
 public class DroneSimulator
 {
     private Random random = new Random();
     private int maxDistance;
     private int maxSpeed;
 
-    public List<int[]> GenerateDroneCoordinates(int numDrones, int maxDistance)
+    public List<Drone> GenerateDroneCoordinates(int numDrones, int maxDistance)
     {
         int[] angles = Enumerable.Range(0, numDrones)
                                  .Select(_ => random.Next(-180, 180))
@@ -49,24 +51,31 @@ public class DroneSimulator
         int[] distances = Enumerable.Range(0, numDrones)
                                     .Select(_ => random.Next(0, maxDistance))
                                     .ToArray();
+        var droneList = new List<Drone>();
+        for (int i = 0; i < numDrones; i++)
+        {
+            Drone drone = new Drone(angles[i], distances[i]);
+            droneList.Add(drone);
+        }
 
-        return angles.Zip(distances, (a, d) => new int[] { a, d }).ToList();
+        return droneList;
     }
 
-    public List<int[]> UpdateDroneCoordinates(List<int[]> droneCoordinates)
+    public List<Drone> UpdateDroneCoordinates(List<Drone> droneCoordinates)
     {
-        List<int[]> updatedCoordinates = new List<int[]>();
+        List<Drone> updatedCoordinates = new List<Drone>();
 
         for (int i = 0; i < droneCoordinates.Count; i++)
         {
-            int angle = droneCoordinates[i][0];
-            int distance = droneCoordinates[i][1];
+            int angle = droneCoordinates[i].degree;
+            int distance = droneCoordinates[i].distance;
 
             bool clockwise = random.Next(0, 2) == 1;
 
+            int sign = 1;
             if (angle != 0)
             {
-                int sign = angle / Math.Abs(angle);
+                sign = angle / Math.Abs(angle);
             }
 
             if (clockwise)
@@ -94,7 +103,7 @@ public class DroneSimulator
                 distance = Math.Max(distance - random.Next(0, maxSpeed), 0); // Move the drone outward
             }
 
-            updatedCoordinates.Add(new int[] { angle, distance });
+            updatedCoordinates.Add(new Drone(angle, distance));
         }
 
         return updatedCoordinates;
@@ -105,13 +114,13 @@ public class DroneSimulator
         this.maxDistance = maxDistance;
         this.maxSpeed = maxSpeed;
 
-        List<int[]> droneCoordinates = GenerateDroneCoordinates(numDrones, maxDistance);
+        List<Drone> droneCoordinates = GenerateDroneCoordinates(numDrones, maxDistance);
         CoordToPicConverter converter = new CoordToPicConverter();
 
         while (true)
         {
             droneCoordinates = UpdateDroneCoordinates(droneCoordinates);
-            List<int[]> coordPics = converter.Convert(droneCoordinates);
+            List<Pixel> coordPics = converter.Convert(droneCoordinates);
 
             // Plot radar coordinates using coordPics
             // Implement your plot_radar_coordinates method here

@@ -39,63 +39,23 @@ namespace UI
         public MainWindow()
         {
             InitializeComponent();
-            int a = globalVars.brightness_threshold;
-
-            MyTrying();
-
-        }
-
-        private void MyTrying()
-        {
-            Random random = new Random();
-            //random.Next(256);
-
-            List<RadarDetectionEnd.Drone> drones1 = new List<RadarDetectionEnd.Drone>();
-            List<RadarDetectionEnd.Drone> drones2 = new List<RadarDetectionEnd.Drone>();
-            for (int i = 1; i < 10; i++)
-            {
-                int zavit = random.Next(-45, 46);
-                int dis = random.Next(globalVars.radar_radius);
-                Drone drone = new Drone(zavit, dis);//UInt32.Parse((zavit).ToString()), UInt32.Parse((dis).ToString()));
-                drones1.Add(drone);
-
-                if (i % 2 == 0)
-                    drone.color = ColorRadar.blue;
-                else
-                    drone.color = ColorRadar.red;
-                drones2.Add(drone);
-
-            }
-
-            for (int i = 1; i < 10; i++)
-            {
-                int zavit = random.Next(360);
-                int dis = random.Next(globalVars.radar_radius);
-                Drone drone = new Drone(zavit, dis);//UInt32.Parse((zavit).ToString()), UInt32.Parse((dis).ToString()));
-                drones1.Add(drone);
-                drone.color = ColorRadar.red;
-                drones2.Add(drone);
-
-
-            }
-            EnterDrone(drones1, drones2);
-
-
-            CreateMatrix();
-
+            int a = RadarDetectionEnd.GlobalVariables.brightness_threshold;
+            RadarDetectionEnd.Program start = new RadarDetectionEnd.Program();
+            start.Main();
+            ///MyTrying();
         }
 
 
 
 
-        private void AddPointAtPolarCoordinates1(double angle, double radius)
+        private void AddPointAtPolarCoordinates1(RadarDetectionEnd.Drone d)
         {
-            double centerX = xAxis.X1;
-            double centerY = yAxis.Y1;
+            int centerX = Convert.ToInt16(xAxis.X1);
+            int centerY = Convert.ToInt16(yAxis.Y1);
 
-            double radians = angle * Math.PI / 180;
-            double x = centerX + radius * Math.Cos(radians);
-            double y = centerY - radius * Math.Sin(radians); // Negative sign for Y-coordinate due to flipped coordinate system
+            int radians = Convert.ToInt32(d.degree * Math.PI / 180);
+            int x = Convert.ToInt32(centerX + d.distance * Math.Cos(radians));
+            int y = Convert.ToInt32(centerY - d.distance * Math.Sin(radians)); // Negative sign for Y-coordinate due to flipped coordinate system
 
             Ellipse point = new Ellipse
             {
@@ -108,21 +68,22 @@ namespace UI
             };
 
 
+
             coordinateSystem1.Children.Add(point);
         }
 
-        private void AddPointAtPolarCoordinates2(double angle, double radius, ColorRadar color)
+        private void AddPointAtPolarCoordinates2(RadarDetectionEnd.Drone drone)
         {
-            double centerX = xAxis2.X1;
-            double centerY = yAxis2.Y1;
+            int centerX = Convert.ToInt16(xAxis2.X1);
+            int centerY = Convert.ToInt16(yAxis2.Y1);
 
-            double radians = angle * Math.PI / 180;
-            double x = centerX + radius * Math.Cos(radians);
-            double y = centerY - radius * Math.Sin(radians); // Negative sign for Y-coordinate due to flipped coordinate system
+            int radians = Convert.ToInt16(drone.degree * Math.PI / 180);
+            int x = Convert.ToInt16(centerX + drone.distance * Math.Cos(radians));
+            int y = Convert.ToInt16(centerY - drone.distance * Math.Sin(radians)); // Negative sign for Y-coordinate due to flipped coordinate system
             Ellipse point = null;
-            switch (color)
+            switch (drone.color)
             {
-                case ColorRadar.white:
+                case RadarDetectionEnd.Color.white:
                     point = new Ellipse
                     {
                         Width = 8,
@@ -133,7 +94,7 @@ namespace UI
                         Margin = new Thickness(x - 3, y - 3, 0, 0) // Adjust position based on size of ellipse
                     };
                     break;
-                case ColorRadar.blue:
+                case RadarDetectionEnd.Color.blue:
                     point = new Ellipse
                     {
                         Width = 8,
@@ -145,7 +106,7 @@ namespace UI
                     };
 
                     break;
-                case ColorRadar.red:
+                case RadarDetectionEnd.Color.red:
                     point = new Ellipse
                     {
                         Width = 8,
@@ -176,118 +137,34 @@ namespace UI
         }
 
 
-        public void EnterDrone(List<Drone> drones_unRecognize, List<Drone> drones_recognize)
+        public void EnterDrone(List<RadarDetectionEnd.Drone> drones_unRecognize, List<RadarDetectionEnd.Drone> drones_recognize)
         {
-            foreach (Drone drone in drones_unRecognize)
+            foreach (RadarDetectionEnd.Drone drone in drones_unRecognize)
             {
                 AddDrone1(drone);
             }
 
-            foreach (Drone drone in drones_recognize)
+            foreach (RadarDetectionEnd.Drone drone in drones_recognize)
             {
                 AddDrone2(drone);
             }
         }
 
 
-        public void AddDrone1(Drone drone)
+        public void AddDrone1(RadarDetectionEnd.Drone drone)
         {
-            double d = drone.distance;
-            d = (d * globalVars.sizeCoridinatesPlot) / globalVars.radar_radius;
-            AddPointAtPolarCoordinates1(drone.degree, d);
+            int d = drone.distance;
+            d = (d * 300) / RadarDetectionEnd.GlobalVariables.radar_radius;
+            RadarDetectionEnd.Drone dr = new RadarDetectionEnd.Drone(drone.degree, d);
+            AddPointAtPolarCoordinates1(dr);
 
         }
-        public void AddDrone2(Drone drone)
+        public void AddDrone2(RadarDetectionEnd.Drone drone)
         {
-            double d = drone.distance;
-            d = (d * globalVars.sizeCoridinatesPlot) / globalVars.radar_radius;
-            AddPointAtPolarCoordinates2(drone.degree, d, drone.color);
+            int d = drone.distance;
+            d = (d * 300) / RadarDetectionEnd.GlobalVariables.radar_radius;
+            drone.distance = d;
+            AddPointAtPolarCoordinates2(drone);
         }
-
-
-
-        public void CreateImage(List<int> numberList, int width, int height, string filePath)
-        {
-
-            WriteableBitmap image = new WriteableBitmap(width, height, 96, 96, PixelFormats.Gray8, null);
-
-            byte[] pixels = new byte[width * height];
-
-            for (int y = 0; y < height; y++)
-            {
-                for (int x = 0; x < width; x++)
-                {
-                    int index = y * width + x;
-                    int number = numberList[index];
-
-                    byte grayValue = (byte)number;
-
-                    int pixelOffset = y * width + x;
-                    pixels[pixelOffset] = grayValue;
-                }
-            }
-
-            Int32Rect rect = new Int32Rect(0, 0, width, height);
-            int stride = width;
-            image.WritePixels(rect, pixels, stride, 0);
-
-            using (var fileStream = new System.IO.FileStream(filePath, System.IO.FileMode.Create))
-            {
-                BitmapEncoder encoder = new PngBitmapEncoder();
-                encoder.Frames.Add(BitmapFrame.Create(image));
-                encoder.Save(fileStream);
-            }
-
-        }
-
-
-
-        private void CreateMatrix()
-        {
-
-            MatrixGrid.Children.Clear();
-            MatrixGrid.RowDefinitions.Clear();
-            MatrixGrid.ColumnDefinitions.Clear();
-
-            Random random = new Random();
-            int index1 = random.Next(Rows * Columns);
-            int index2 = random.Next(Rows * Columns);
-            int index3 = random.Next(Rows * Columns);
-
-            for (int i = 0; i < Rows; i++)
-            {
-                MatrixGrid.RowDefinitions.Add(new RowDefinition() { Height = new GridLength(1, GridUnitType.Star) });
-
-                for (int j = 0; j < Columns; j++)
-                {
-                    MatrixGrid.ColumnDefinitions.Add(new ColumnDefinition() { Width = new GridLength(1, GridUnitType.Star) });
-                    int brash = 0;
-
-                    if ((index1 - 10 <= i * j && i * j <= index1 + 10) ||
-                        (index2 - 10 <= i * j && i * j <= index2 + 10) ||
-                        (index3 - 10 <= i * j && i * j <= index3 + 10))
-                    { brash = 255; }
-                    Border square = new Border
-                    {
-                        BorderBrush = Brushes.Black,
-                        BorderThickness = new Thickness(1),
-                        Background = GetColorBrush(brash)// * (MaxValue / (Rows * Columns)))
-
-                    };
-
-                    Grid.SetRow(square, i);
-                    Grid.SetColumn(square, j);
-
-                    MatrixGrid.Children.Add(square);
-                }
-            }
-
-        }
-
-        private SolidColorBrush GetColorBrush(int value)
-        {
-            byte intensity = (byte)value;// (byte)(255 - (value * 255 / MaxValue));
-            return new SolidColorBrush(Color.FromRgb(intensity, intensity, intensity));
-        }
-
     }
+}
